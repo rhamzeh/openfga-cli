@@ -1,0 +1,20 @@
+- tuple_key:
+    user: mystring
+    relation: owner
+    object: bit:abc
+  expectation: false
+- tuple_key:
+    user: Foo
+    relation: owner
+    object: bit:abc
+  expectation: true
+- tuple_key:
+    user: Boo
+    relation: owner
+    object: bit:xyz
+  expectation: false
+- tuple_key:
+    user: Boo
+    relation: reader
+    object: bit:xyz
+  expectation: true

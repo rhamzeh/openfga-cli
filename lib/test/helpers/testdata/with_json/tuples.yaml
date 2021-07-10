@@ -1,0 +1,6 @@
+- user: Foo
+  relation: owner
+  object: bit:abc
+- user: Boo
+  relation: writer
+  object: bit:xyz

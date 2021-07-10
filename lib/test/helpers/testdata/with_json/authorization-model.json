@@ -1,0 +1,61 @@
+{
+	"type_definitions": [
+		{
+			"type": "bit",
+			"relations": {
+				"admin": {
+					"union": {
+						"child": [
+							{
+								"this": {
+								}
+							},
+							{
+								"computedUserset": {
+									"object": "",
+									"relation": "owner"
+								}
+							}
+						]
+					}
+				},
+				"owner": {
+					"this": {
+					}
+				},
+				"reader": {
+					"union": {
+						"child": [
+							{
+								"this": {
+								}
+							},
+							{
+								"computedUserset": {
+									"object": "",
+									"relation": "writer"
+								}
+							}
+						]
+					}
+				},
+				"writer": {
+					"union": {
+						"child": [
+							{
+								"this": {
+								}
+							},
+							{
+								"computedUserset": {
+									"object": "",
+									"relation": "admin"
+								}
+							}
+						]
+					}
+				}
+			}
+		}
+	]
+}
