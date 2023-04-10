@@ -1,6 +1,6 @@
 {
   "name": "@rhamzeh/openfga-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "bin": {
     "openfga-cli-node": "./dist/lib/cli.js"
   },
@@ -25,7 +25,8 @@
     "clean": "rm -r dist/",
     "test": "mocha --config .mocharc.json lib/**/*.test.ts",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "prepublish": "npm run clean; npm run build"
   },
   "dependencies": {
     "@auth0/fga": "^0.9.1",
