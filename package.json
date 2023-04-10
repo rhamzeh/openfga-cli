@@ -25,7 +25,8 @@
     "clean": "rm -r dist/",
     "test": "mocha --config .mocharc.json lib/**/*.test.ts",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "prepublish": "npm run clean; npm run build"
   },
   "dependencies": {
     "@auth0/fga": "^0.9.1",
