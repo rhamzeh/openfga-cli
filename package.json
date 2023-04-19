@@ -1,6 +1,6 @@
 {
   "name": "@rhamzeh/openfga-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "bin": {
     "openfga-cli-node": "./dist/lib/cli.js"
   },
@@ -13,13 +13,16 @@
   },
   "homepage": "https://github.com/rhamzeh/openfga-cli#readme",
   "license": "Apache-2.0",
-  "contributors": [{
-    "name" : "Raghd Hamzeh",
-    "url" : "https://github.com/rhamzeh"
-  }, {
-    "name" : "Adrian Tam",
-    "url" : "https://github.com/adriantam"
-  }],
+  "contributors": [
+    {
+      "name": "Raghd Hamzeh",
+      "url": "https://github.com/rhamzeh"
+    },
+    {
+      "name": "Adrian Tam",
+      "url": "https://github.com/adriantam"
+    }
+  ],
   "scripts": {
     "build": "tsc --build tsconfig.prod.json",
     "clean": "rm -r dist/",
