@@ -63,7 +63,7 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
       environment: toEnvironment,
     });
 
-    const { authorization_model: output } = await client.readAuthorizationModel();
+    const { authorization_model: output } = await client.readLatestAuthorizationModel();
     const newAuthzModel = await client.writeAuthorizationModel({
       schema_version: output?.schema_version,
       type_definitions: output?.type_definitions || [],
