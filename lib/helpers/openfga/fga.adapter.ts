@@ -52,6 +52,10 @@ export interface OpenFgaClientConfig {
   immutableBypassSecret?: string;
 }
 
+const AUTH0_PROD_HOSTS = [Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.US).apiHost,
+    Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Staging).apiHost];
+const AUTH0_PLAY_HOST = Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Playground).apiHost;
+
 export class FgaAdapter extends OpenFgaClient {
   constructor(config: OpenFgaClientConfig) {
     super(FgaAdapter.buildConfig(config));
@@ -69,7 +73,7 @@ export class FgaAdapter extends OpenFgaClient {
     if (knownEnvironment === KnownEnvironment.Custom) {
       return {
         apiScheme: 'http',
-        apiHost: 'localhost:8080',
+        apiHost: 'localhost:8080', // default openfga
       };
     }
     return Auth0FgaConfiguration.getEnvironmentConfiguration(knownEnvironment);
@@ -124,13 +128,23 @@ export class FgaAdapter extends OpenFgaClient {
     if (PLAYGROUND_URL) {
       return PLAYGROUND_URL;
     }
-    if (this.apiUri === 'https://api.playground.fga.dev') {
+    if (this.apiUri === `https://${AUTH0_PLAY_HOST}`) {
       return 'https://play.fga.dev';
     }
     if (this.apiUri === 'http://localhost:8080') {
       return 'http://localhost:3000/playground';
     }
     return undefined;
+  }
+
+  public get canCreateGetOrModifyStore(): boolean {
+    return !(this.configuration.apiScheme === "https" &&
+      AUTH0_PROD_HOSTS.includes(this.configuration.apiHost)); 
+  }
+
+  public get canQueryStores(): boolean {
+    return !(this.configuration.apiScheme === "https" &&
+      AUTH0_PROD_HOSTS.concat(AUTH0_PLAY_HOST).includes(this.configuration.apiHost)); 
   }
 
   async readTuples(): Promise<ReadResponse> {

@@ -4,13 +4,13 @@ import { BaseCommandArgs } from '../../utils/types/base-command-args';
 import { reloadTuples } from '../../helpers/openfga/tuples';
 import { reloadAssertions } from '../../helpers/openfga/assertions';
 import { FgaAdapter, KnownEnvironment, knownEnvironmentConfigurations } from '../../helpers/openfga/fga.adapter';
-import { ulid } from 'ulid';
 import { ClientTupleKey } from '@openfga/sdk';
+import { InputValidationError } from "../../utils/errors";
 
 interface CommandArgs {
   includeTuples: boolean;
   includeAssertions: boolean;
-  toStoreId: string;
+  toStoreId?: string;
   toClientId?: string;
   toClientSecret?: string;
   toEnvironment?: KnownEnvironment;
@@ -21,7 +21,7 @@ exports.desc = 'Migrate a store to another';
 exports.builder = {
   includeTuples: {
     describe: 'Whether to also migrate tuples. env var=OPENFGA_INCLUDE_TUPLES',
-    default: true,
+    default: false,
     type: 'boolean',
   },
   includeAssertions: {
@@ -31,7 +31,6 @@ exports.builder = {
   },
   toStoreId: {
     describe: 'Store ID. env var=OPENFGA_TO_STORE_ID',
-    default: ulid(),
     type: 'string',
   },
   toEnvironment: {
@@ -57,14 +56,24 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
     const client = FgaAdapter.createNewClient(argv);
     const client2 = FgaAdapter.createNewClient({
       ...argv,
-      storeId: toStoreId,
+      storeId: toStoreId!,
       clientId: toClientId,
       clientSecret: toClientSecret,
       environment: toEnvironment,
     });
 
+    if (!toStoreId) {
+      if (!client2.canCreateGetOrModifyStore) {
+        throw new InputValidationError("toStoreId not provided");
+      } else {
+        const oldStore = await client.getStore().catch(() => undefined);
+        const { id } = await client2.createStore({ name: oldStore?.name! || "New FGA Store" });
+        client2.storeId = id!;
+      }
+    }
+
     const { authorization_model: output } = await client.readLatestAuthorizationModel();
-    const newAuthzModel = await client.writeAuthorizationModel({
+    const newAuthzModel = await client2.writeAuthorizationModel({
       schema_version: output?.schema_version,
       type_definitions: output?.type_definitions || [],
     });
