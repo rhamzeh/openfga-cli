@@ -7,7 +7,7 @@ import JSON5 from 'json5';
 import path from 'path';
 
 import { InvalidConfigError, LoadAssertionsErrors } from '../utils/errors';
-import { assertionsSchema, FgaAssertion, tuplesSchema } from '../utils/schema';
+import { assertionsSchema, FgaAssertion, tuplesSchema } from './openfga/schema';
 import { validate } from '../utils/validate';
 import { SupportedFileExtension, SyntaxFormat, transformToApiSyntax } from './transform-syntax';
 import { Schema } from 'ajv';

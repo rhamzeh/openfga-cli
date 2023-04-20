@@ -1,4 +1,5 @@
 import {
+  Assertion,
   AuthorizationModel as OpenFgaAuthorizationModel,
   ClientConfiguration,
   ClientTupleKey,
@@ -8,11 +9,20 @@ import {
   ReadResponse,
   Tuple,
   TupleKey,
-} from '@openfga/sdk';
-import { Configuration as Auth0FgaConfiguration } from '@auth0/fga';
+} from "@openfga/sdk";
 import { createRequestFunction } from '@openfga/sdk/dist/common';
 import * as globalAxios from 'axios';
 import { version as packageVersion } from '../../../package.json';
+import {
+  AUTH0_PLAY_HOST,
+  AUTH0_PROD_HOSTS,
+  Auth0FgaConfiguration,
+  EnvironmentConfiguration,
+  KnownEnvironment
+} from "./environment-config";
+import { validate } from "../../utils/validate";
+import { LoadAssertionsErrors, LoadTuplesErrors } from "../../utils/errors";
+import { assertionsSchema, FgaAssertion, FgaAssertionResult, tuplesSchema } from "./schema";
 
 export type AuthorizationModel = Required<Pick<OpenFgaAuthorizationModel, 'type_definitions'>> &
   OpenFgaAuthorizationModel;
@@ -21,23 +31,6 @@ const { API_HOST, API_SCHEME, READ_TUPLE_LIMIT = 5000 } = process.env;
 const TUPLE_MAX_WRITE_CHUNK = 10;
 
 const { PLAYGROUND_URL } = process.env;
-
-export interface EnvironmentConfiguration {
-  apiScheme: string;
-  apiHost: string;
-  apiTokenIssuer?: string;
-  apiAudience?: string;
-  allowNoAuth?: boolean;
-}
-
-export enum KnownEnvironment {
-  US = 'us',
-  Staging = 'staging',
-  Playground = 'playground',
-  Custom = 'custom',
-}
-
-export const knownEnvironmentConfigurations: KnownEnvironment[] = Object.values(KnownEnvironment);
 
 export interface OpenFgaClientConfig {
   storeId: string;
@@ -51,10 +44,6 @@ export interface OpenFgaClientConfig {
   apiHost?: string;
   immutableBypassSecret?: string;
 }
-
-const AUTH0_PROD_HOSTS = [Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.US).apiHost,
-    Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Staging).apiHost];
-const AUTH0_PLAY_HOST = Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Playground).apiHost;
 
 export class FgaAdapter extends OpenFgaClient {
   constructor(config: OpenFgaClientConfig) {
@@ -205,5 +194,74 @@ export class FgaAdapter extends OpenFgaClient {
         maxPerChunk: TUPLE_MAX_WRITE_CHUNK,
       },
     });
+  }
+  
+  public async validateAndWriteAssertions(assertions: Assertion[]): Promise<void> {
+    const { valid, errors } = validate<Assertion>(assertions, assertionsSchema);
+  
+    if (!valid) {
+      console.error('Unable to load assertions due to syntax errors: ', errors);
+      throw new LoadAssertionsErrors('Bad syntax in assertions file');
+    }
+
+    await this.writeAssertions(
+      assertions.map((assertion) => ({
+        ...(assertion.tuple_key as ClientTupleKey),
+        expectation: assertion.expectation || false,
+      })),
+    );
+  }
+  
+  public async validateAndReloadTuples(tuples: ClientTupleKey[], onlyAppend = false): Promise<void> {
+    const { valid, errors } = validate<ClientTupleKey>(tuples, tuplesSchema);
+  
+    if (!valid) {
+      console.error('Unable to load tuples due to syntax errors: ', errors);
+      throw new LoadTuplesErrors('Bad syntax in tuples.yaml');
+    }
+    
+    if (!onlyAppend) {
+      await this.deleteAllTuples();
+    }
+    await this.writeTuples(tuples);
+  }
+  
+  public async executeTest(test: FgaAssertion): Promise<FgaAssertionResult> {
+    const { allowed } = await this.check({
+      ...(test.tuple_key as ClientTupleKey),
+      contextualTuples: (test.contextual_tuples?.tuple_keys as ClientTupleKey[]) || [],
+    });
+    const response = !!allowed;
+  
+    return { test, assertionResult: test.expectation === response, response };
+  }
+  
+  public async executeTests(tests: FgaAssertion[]): Promise<boolean> {
+    const { valid, errors } = validate<FgaAssertion>(tests, assertionsSchema);
+  
+    if (!valid) {
+      console.error('Fail to load tests with errors:', errors);
+      throw new LoadAssertionsErrors('Bad tests syntax');
+    }
+
+    const result = await Promise.all(tests.map(async (item) => await this.executeTest(item)));
+    const failedAssertions = result
+      .filter((item) => !item.assertionResult)
+      .map((item) => ({
+        ...item.test,
+        response: item.response,
+      }));
+
+    if (failedAssertions.length) {
+      const errorsArray = failedAssertions.map(
+        (item) =>
+          `- user=${item.tuple_key!.user}, relation=${item.tuple_key!.relation}, object=${
+            item.tuple_key!.object
+          }, contextual_tuples${item.contextual_tuples}\n  expected: ${item.expectation}, got: ${item.response}`,
+      );
+      console.error(['Failed assertions:'].concat(errorsArray).join('\n'));
+    }
+
+    return !failedAssertions.length;
   }
 }

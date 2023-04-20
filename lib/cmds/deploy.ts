@@ -2,9 +2,7 @@ import { Options as YargsOptions } from 'yargs';
 
 import { loadData } from '../helpers/load-config';
 import { InputValidationError } from '../utils/errors';
-import { reloadTuples } from '../helpers/openfga/tuples';
 import { baseArgsDef, BaseCommandArgs } from '../utils/types/base-command-args';
-import { reloadAssertions } from '../helpers/openfga/assertions';
 import { FgaAdapter } from '../helpers/openfga/fga.adapter';
 
 interface CommandArgs extends BaseCommandArgs {
@@ -76,15 +74,15 @@ exports.handler = async (argv: CommandArgs) => {
 
     if (argv.overwriteAssertions) {
       client.authorizationModelId = authorizationModelId;
-      await reloadAssertions(client, storeConfig.assertions);
+      await client.validateAndWriteAssertions(storeConfig.assertions);
       console.info('Assertions reloaded');
     }
 
     if (argv.overwriteTuples) {
-      await reloadTuples(client, storeConfig.tuples);
+      await client.validateAndReloadTuples(storeConfig.tuples);
       console.info('Tuples reloaded');
     } else if (argv.appendTuples) {
-      await reloadTuples(client, storeConfig.tuples, true);
+      await client.validateAndReloadTuples(storeConfig.tuples, true);
       console.info('Tuples appended');
     }
 

@@ -1,11 +1,10 @@
 import { Options as YargsOptions } from 'yargs';
 
 import { BaseCommandArgs } from '../../utils/types/base-command-args';
-import { reloadTuples } from '../../helpers/openfga/tuples';
-import { reloadAssertions } from '../../helpers/openfga/assertions';
-import { FgaAdapter, KnownEnvironment, knownEnvironmentConfigurations } from '../../helpers/openfga/fga.adapter';
+import { FgaAdapter } from '../../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
 import { InputValidationError } from "../../utils/errors";
+import { KnownEnvironment, knownEnvironmentConfigurations } from "../../helpers/openfga/environment-config";
 
 interface CommandArgs {
   includeTuples: boolean;
@@ -88,13 +87,13 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
 
     if (includeTuples) {
       const { tuples } = await client.readTuples();
-      await reloadTuples(client2, tuples?.map((tuple) => ({ ...(tuple.key as ClientTupleKey) })) || [], true);
+      await client2.validateAndReloadTuples(tuples?.map((tuple) => ({ ...(tuple.key as ClientTupleKey) })) || [], true);
     }
     if (includeAssertions) {
       client.authorizationModelId = output?.id;
       client2.authorizationModelId = newAuthzModel?.authorization_model_id;
       const { assertions } = await client.readAssertions();
-      await reloadAssertions(client2, assertions || []);
+      await client2.validateAndWriteAssertions(assertions || []);
     }
     console.info(`Migration completed`);
   } catch (err) {

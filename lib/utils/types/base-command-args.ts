@@ -1,5 +1,5 @@
 import { Options as YargsOptions } from 'yargs';
-import { knownEnvironmentConfigurations, KnownEnvironment } from '../../helpers/openfga/fga.adapter';
+import { knownEnvironmentConfigurations, KnownEnvironment } from '../../helpers/openfga/environment-config';
 
 export interface BaseCommandArgs {
   storeId: string;
