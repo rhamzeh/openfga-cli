@@ -1,7 +1,7 @@
 import { Argv } from 'yargs';
 
 import { commands } from './tuple-cmds';
-import { KnownEnvironment, knownEnvironmentConfigurations } from '../helpers/openfga/fga.adapter';
+import { KnownEnvironment, knownEnvironmentConfigurations } from '../helpers/openfga/environment-config';
 
 exports.command = 'tuple [storeId]';
 exports.desc = 'Interact with relationship tuples in the system';

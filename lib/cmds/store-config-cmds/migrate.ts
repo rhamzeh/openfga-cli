@@ -1,16 +1,15 @@
 import { Options as YargsOptions } from 'yargs';
 
 import { BaseCommandArgs } from '../../utils/types/base-command-args';
-import { reloadTuples } from '../../helpers/openfga/tuples';
-import { reloadAssertions } from '../../helpers/openfga/assertions';
-import { FgaAdapter, KnownEnvironment, knownEnvironmentConfigurations } from '../../helpers/openfga/fga.adapter';
-import { ulid } from 'ulid';
+import { FgaAdapter } from '../../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
+import { InputValidationError } from "../../utils/errors";
+import { KnownEnvironment, knownEnvironmentConfigurations } from "../../helpers/openfga/environment-config";
 
 interface CommandArgs {
   includeTuples: boolean;
   includeAssertions: boolean;
-  toStoreId: string;
+  toStoreId?: string;
   toClientId?: string;
   toClientSecret?: string;
   toEnvironment?: KnownEnvironment;
@@ -21,7 +20,7 @@ exports.desc = 'Migrate a store to another';
 exports.builder = {
   includeTuples: {
     describe: 'Whether to also migrate tuples. env var=OPENFGA_INCLUDE_TUPLES',
-    default: true,
+    default: false,
     type: 'boolean',
   },
   includeAssertions: {
@@ -31,7 +30,6 @@ exports.builder = {
   },
   toStoreId: {
     describe: 'Store ID. env var=OPENFGA_TO_STORE_ID',
-    default: ulid(),
     type: 'string',
   },
   toEnvironment: {
@@ -57,14 +55,24 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
     const client = FgaAdapter.createNewClient(argv);
     const client2 = FgaAdapter.createNewClient({
       ...argv,
-      storeId: toStoreId,
+      storeId: toStoreId!,
       clientId: toClientId,
       clientSecret: toClientSecret,
       environment: toEnvironment,
     });
 
-    const { authorization_model: output } = await client.readAuthorizationModel();
-    const newAuthzModel = await client.writeAuthorizationModel({
+    if (!toStoreId) {
+      if (!client2.canCreateGetOrModifyStore) {
+        throw new InputValidationError("toStoreId not provided");
+      } else {
+        const oldStore = await client.getStore().catch(() => undefined);
+        const { id } = await client2.createStore({ name: oldStore?.name! || "New FGA Store" });
+        client2.storeId = id!;
+      }
+    }
+
+    const { authorization_model: output } = await client.readLatestAuthorizationModel();
+    const newAuthzModel = await client2.writeAuthorizationModel({
       schema_version: output?.schema_version,
       type_definitions: output?.type_definitions || [],
     });
@@ -79,13 +87,13 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
 
     if (includeTuples) {
       const { tuples } = await client.readTuples();
-      await reloadTuples(client2, tuples?.map((tuple) => ({ ...(tuple.key as ClientTupleKey) })) || [], true);
+      await client2.validateAndReloadTuples(tuples?.map((tuple) => ({ ...(tuple.key as ClientTupleKey) })) || [], true);
     }
     if (includeAssertions) {
       client.authorizationModelId = output?.id;
       client2.authorizationModelId = newAuthzModel?.authorization_model_id;
       const { assertions } = await client.readAssertions();
-      await reloadAssertions(client2, assertions || []);
+      await client2.validateAndWriteAssertions(assertions || []);
     }
     console.info(`Migration completed`);
   } catch (err) {

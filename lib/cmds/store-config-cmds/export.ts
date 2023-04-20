@@ -45,7 +45,7 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
 
     const client = FgaAdapter.createNewClient(argv);
 
-    const { authorization_model: authorizationModel } = await client.readAuthorizationModel();
+    const { authorization_model: authorizationModel } = await client.readLatestAuthorizationModel();
     client.authorizationModelId = authorizationModel?.id;
 
     await saveFile(

@@ -2,8 +2,6 @@ import { Options as YargsOptions } from 'yargs';
 
 import { loadData } from '../helpers/load-config';
 import { baseArgsDef, BaseCommandArgs } from '../utils/types/base-command-args';
-import { reloadTuples } from '../helpers/openfga/tuples';
-import { executeTests } from '../helpers/openfga/assertions';
 import { FgaAdapter } from '../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
 
@@ -63,10 +61,10 @@ exports.handler = async (argv: CommandArgs) => {
       authorizationModelId,
     );
     // Write tuples
-    await reloadTuples(client, tuples);
+    await client.validateAndReloadTuples(tuples);
 
     // Run tests
-    const pass = await executeTests(client, assertions);
+    const pass = await client.executeTests(assertions);
     // Clean up existing tuples
     if (!argv.keepState) {
       await client.deleteAllTuples();
