@@ -1,9 +1,11 @@
 import { Options as YargsOptions } from 'yargs';
+import { randomUUID } from 'node:crypto';
 
 import { loadData } from '../helpers/load-config';
 import { baseArgsDef, BaseCommandArgs } from '../utils/types/base-command-args';
 import { FgaAdapter } from '../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
+import * as crypto from "crypto";
 
 interface CommandArgs extends Omit<BaseCommandArgs, 'storeId'> {
   storeId?: string;
@@ -37,15 +39,22 @@ exports.handler = async (argv: CommandArgs) => {
 
   // Load config
   try {
-    const { assertions, id, schemaVersion, tuples, typeDefinitions } = await loadData(argv);
+    const { assertions, schemaVersion, tuples, typeDefinitions } = await loadData(argv);
 
     const client = FgaAdapter.createNewClient({
       ...argv,
-      storeId: id,
+      storeId: undefined!,
     });
 
+    if (client.canCreateGetOrModifyStore) {
+      const { id } = await client.createStore({ name: `Test Store ${randomUUID()}` });
+      client.storeId = id!;
+    } else  {
+      client.storeId = randomUUID();
+    }
+
     if (client.playgroundUri) {
-      console.info('You can visualize this store on this link: %s/stores/create/?id=%s', client.playgroundUri, id);
+      console.info('You can visualize this store on this link: %s/stores/create/?id=%s', client.playgroundUri, client.storeId);
     }
 
     // Write model
@@ -57,9 +66,10 @@ exports.handler = async (argv: CommandArgs) => {
       'Deployed new authorization model\n - Environment: %s\n - API URL: %s\n - Store ID: %s\n - Authorization Model Version ID: %s',
       argv.environment,
       client.apiUri,
-      id,
+      client.storeId,
       authorizationModelId,
     );
+    client.authorizationModelId = authorizationModelId;
     // Write tuples
     await client.validateAndReloadTuples(tuples);
 
