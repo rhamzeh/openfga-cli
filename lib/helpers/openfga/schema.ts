@@ -1,6 +1,6 @@
-import { Assertion, CheckRequest } from '@openfga/sdk';
+import { Assertion, ClientTupleKey } from "@openfga/sdk";
 
-export type FgaAssertion = Assertion & Pick<CheckRequest, 'contextual_tuples'>;
+export type FgaAssertion = Assertion & { contextual_tuples?: ClientTupleKey[] };
 
 export interface FgaAssertionResult {
   test: FgaAssertion;

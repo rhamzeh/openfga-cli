@@ -232,7 +232,7 @@ export class FgaAdapter extends OpenFgaClient {
   public async executeTest(test: FgaAssertion): Promise<FgaAssertionResult> {
     const { allowed } = await this.check({
       ...(test.tuple_key as ClientTupleKey),
-      contextualTuples: (test.contextual_tuples?.tuple_keys as ClientTupleKey[]) || [],
+      contextualTuples: test.contextual_tuples || [],
     });
     const response = !!allowed;
   
@@ -260,7 +260,7 @@ export class FgaAdapter extends OpenFgaClient {
         (item) =>
           `- user=${item.tuple_key!.user}, relation=${item.tuple_key!.relation}, object=${
             item.tuple_key!.object
-          }, contextual_tuples${item.contextual_tuples}\n  expected: ${item.expectation}, got: ${item.response}`,
+          }, contextual_tuples=${JSON.stringify((item.contextual_tuples as any)?.map((ct: any) => ct.tuple_key)) || []}\n  expected: ${item.expectation}, got: ${item.response}`,
       );
       console.error(['Failed assertions:'].concat(errorsArray).join('\n'));
     }
