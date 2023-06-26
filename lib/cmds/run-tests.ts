@@ -5,7 +5,7 @@ import { loadData } from '../helpers/load-config';
 import { baseArgsDef, BaseCommandArgs } from '../utils/types/base-command-args';
 import { FgaAdapter } from '../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
-import * as crypto from "crypto";
+import * as crypto from 'crypto';
 
 interface CommandArgs extends Omit<BaseCommandArgs, 'storeId'> {
   storeId?: string;
@@ -49,12 +49,16 @@ exports.handler = async (argv: CommandArgs) => {
     if (client.canCreateGetOrModifyStore) {
       const { id } = await client.createStore({ name: `Test Store ${randomUUID()}` });
       client.storeId = id!;
-    } else  {
+    } else {
       client.storeId = randomUUID();
     }
 
     if (client.playgroundUri) {
-      console.info('You can visualize this store on this link: %s/stores/create/?id=%s', client.playgroundUri, client.storeId);
+      console.info(
+        'You can visualize this store on this link: %s/stores/create/?id=%s',
+        client.playgroundUri,
+        client.storeId,
+      );
     }
 
     // Write model

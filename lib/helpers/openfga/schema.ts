@@ -1,4 +1,4 @@
-import { Assertion, ClientTupleKey } from "@openfga/sdk";
+import { Assertion, ClientTupleKey } from '@openfga/sdk';
 
 export type FgaAssertion = Assertion & { contextual_tuples?: ClientTupleKey[] };
 
