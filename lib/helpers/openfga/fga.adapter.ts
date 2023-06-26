@@ -188,12 +188,15 @@ export class FgaAdapter extends OpenFgaClient {
   }
 
   public async writeTuples(writeKeys: ClientTupleKey[]): Promise<ClientWriteResponse> {
-    return super.writeTuples(writeKeys, {
+    const writeResults = await super.writeTuples(writeKeys, {
       transaction: {
         disable: true,
         maxPerChunk: TUPLE_MAX_WRITE_CHUNK,
       },
     });
+    const firstError = writeResults.writes.find(result => result.err);
+    if (firstError) throw firstError;
+    return writeResults;
   }
   
   public async validateAndWriteAssertions(assertions: Assertion[]): Promise<void> {
