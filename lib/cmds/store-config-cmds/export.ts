@@ -54,7 +54,7 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
       DataFormat.JSON,
       JSON.parse(
         loadSyntax(
-          <Required<Pick<AuthorizationModel, 'type_definitions'>>>authorizationModel!,
+          <Required<Pick<AuthorizationModel, 'schema_version' | 'type_definitions'>>>authorizationModel!,
           getSyntaxFormatFromFileExtension(argv.outputFormat),
         ),
       ),

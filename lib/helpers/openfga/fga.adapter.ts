@@ -9,7 +9,7 @@ import {
   ReadResponse,
   Tuple,
   TupleKey,
-} from "@openfga/sdk";
+} from '@openfga/sdk';
 import { createRequestFunction } from '@openfga/sdk/dist/common';
 import * as globalAxios from 'axios';
 import { version as packageVersion } from '../../../package.json';
@@ -18,11 +18,11 @@ import {
   AUTH0_PROD_HOSTS,
   Auth0FgaConfiguration,
   EnvironmentConfiguration,
-  KnownEnvironment
-} from "./environment-config";
-import { validate } from "../../utils/validate";
-import { LoadAssertionsErrors, LoadTuplesErrors } from "../../utils/errors";
-import { assertionsSchema, FgaAssertion, FgaAssertionResult, tuplesSchema } from "./schema";
+  KnownEnvironment,
+} from './environment-config';
+import { validate } from '../../utils/validate';
+import { LoadAssertionsErrors, LoadTuplesErrors } from '../../utils/errors';
+import { assertionsSchema, FgaAssertion, FgaAssertionResult, tuplesSchema } from './schema';
 
 export type AuthorizationModel = Required<Pick<OpenFgaAuthorizationModel, 'type_definitions'>> &
   OpenFgaAuthorizationModel;
@@ -127,13 +127,14 @@ export class FgaAdapter extends OpenFgaClient {
   }
 
   public get canCreateGetOrModifyStore(): boolean {
-    return !(this.configuration.apiScheme === "https" &&
-      AUTH0_PROD_HOSTS.includes(this.configuration.apiHost)); 
+    return !(this.configuration.apiScheme === 'https' && AUTH0_PROD_HOSTS.includes(this.configuration.apiHost));
   }
 
   public get canQueryStores(): boolean {
-    return !(this.configuration.apiScheme === "https" &&
-      AUTH0_PROD_HOSTS.concat(AUTH0_PLAY_HOST).includes(this.configuration.apiHost)); 
+    return !(
+      this.configuration.apiScheme === 'https' &&
+      AUTH0_PROD_HOSTS.concat(AUTH0_PLAY_HOST).includes(this.configuration.apiHost)
+    );
   }
 
   async readTuples(): Promise<ReadResponse> {
@@ -188,17 +189,20 @@ export class FgaAdapter extends OpenFgaClient {
   }
 
   public async writeTuples(writeKeys: ClientTupleKey[]): Promise<ClientWriteResponse> {
-    return super.writeTuples(writeKeys, {
+    const writeResults = await super.writeTuples(writeKeys, {
       transaction: {
         disable: true,
         maxPerChunk: TUPLE_MAX_WRITE_CHUNK,
       },
     });
+    const firstError = writeResults.writes.find((result) => result.err);
+    if (firstError) throw firstError;
+    return writeResults;
   }
-  
+
   public async validateAndWriteAssertions(assertions: Assertion[]): Promise<void> {
     const { valid, errors } = validate<Assertion>(assertions, assertionsSchema);
-  
+
     if (!valid) {
       console.error('Unable to load assertions due to syntax errors: ', errors);
       throw new LoadAssertionsErrors('Bad syntax in assertions file');
@@ -211,34 +215,34 @@ export class FgaAdapter extends OpenFgaClient {
       })),
     );
   }
-  
+
   public async validateAndReloadTuples(tuples: ClientTupleKey[], onlyAppend = false): Promise<void> {
     const { valid, errors } = validate<ClientTupleKey>(tuples, tuplesSchema);
-  
+
     if (!valid) {
       console.error('Unable to load tuples due to syntax errors: ', errors);
       throw new LoadTuplesErrors('Bad syntax in tuples.yaml');
     }
-    
+
     if (!onlyAppend) {
       await this.deleteAllTuples();
     }
     await this.writeTuples(tuples);
   }
-  
+
   public async executeTest(test: FgaAssertion): Promise<FgaAssertionResult> {
     const { allowed } = await this.check({
       ...(test.tuple_key as ClientTupleKey),
-      contextualTuples: (test.contextual_tuples?.tuple_keys as ClientTupleKey[]) || [],
+      contextualTuples: test.contextual_tuples || [],
     });
     const response = !!allowed;
-  
+
     return { test, assertionResult: test.expectation === response, response };
   }
-  
+
   public async executeTests(tests: FgaAssertion[]): Promise<boolean> {
     const { valid, errors } = validate<FgaAssertion>(tests, assertionsSchema);
-  
+
     if (!valid) {
       console.error('Fail to load tests with errors:', errors);
       throw new LoadAssertionsErrors('Bad tests syntax');
@@ -257,7 +261,9 @@ export class FgaAdapter extends OpenFgaClient {
         (item) =>
           `- user=${item.tuple_key!.user}, relation=${item.tuple_key!.relation}, object=${
             item.tuple_key!.object
-          }, contextual_tuples${item.contextual_tuples}\n  expected: ${item.expectation}, got: ${item.response}`,
+          }, contextual_tuples=${
+            JSON.stringify((item.contextual_tuples as any)?.map((ct: any) => ct.tuple_key)) || []
+          }\n  expected: ${item.expectation}, got: ${item.response}`,
       );
       console.error(['Failed assertions:'].concat(errorsArray).join('\n'));
     }

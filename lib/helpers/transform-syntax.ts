@@ -233,6 +233,7 @@ export enum SupportedFileExtension {
   Yml = 'yml',
   Scl = 'scl',
   Dsl = 'dsl',
+  Fga = 'fga',
   Ofga = 'ofga',
   OpenFga = 'openfga',
 }
@@ -246,6 +247,7 @@ export function getSyntaxFormatFromFileExtension(fileExtension: SupportedFileExt
       return SyntaxFormat.Friendly1;
     case SupportedFileExtension.Dsl:
     case SupportedFileExtension.Scl:
+    case SupportedFileExtension.Fga:
     case SupportedFileExtension.Ofga:
     case SupportedFileExtension.OpenFga:
       return SyntaxFormat.Friendly2;

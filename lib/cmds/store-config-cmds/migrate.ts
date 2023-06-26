@@ -3,8 +3,8 @@ import { Options as YargsOptions } from 'yargs';
 import { BaseCommandArgs } from '../../utils/types/base-command-args';
 import { FgaAdapter } from '../../helpers/openfga/fga.adapter';
 import { ClientTupleKey } from '@openfga/sdk';
-import { InputValidationError } from "../../utils/errors";
-import { KnownEnvironment, knownEnvironmentConfigurations } from "../../helpers/openfga/environment-config";
+import { InputValidationError } from '../../utils/errors';
+import { KnownEnvironment, knownEnvironmentConfigurations } from '../../helpers/openfga/environment-config';
 
 interface CommandArgs {
   includeTuples: boolean;
@@ -63,10 +63,10 @@ exports.handler = async (argv: CommandArgs & BaseCommandArgs) => {
 
     if (!toStoreId) {
       if (!client2.canCreateGetOrModifyStore) {
-        throw new InputValidationError("toStoreId not provided");
+        throw new InputValidationError('toStoreId not provided');
       } else {
         const oldStore = await client.getStore().catch(() => undefined);
-        const { id } = await client2.createStore({ name: oldStore?.name! || "New FGA Store" });
+        const { id } = await client2.createStore({ name: oldStore?.name || 'New FGA Store' });
         client2.storeId = id!;
       }
     }

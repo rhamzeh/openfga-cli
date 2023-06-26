@@ -19,6 +19,8 @@ export interface EnvironmentConfiguration {
 
 export const knownEnvironmentConfigurations: KnownEnvironment[] = Object.values(KnownEnvironment);
 
-export const AUTH0_PROD_HOSTS = [Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.US).apiHost,
-    Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Staging).apiHost];
+export const AUTH0_PROD_HOSTS = [
+  Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.US).apiHost,
+  Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Staging).apiHost,
+];
 export const AUTH0_PLAY_HOST = Auth0FgaConfiguration.getEnvironmentConfiguration(KnownEnvironment.Playground).apiHost;
