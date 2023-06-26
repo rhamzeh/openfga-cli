@@ -40,14 +40,20 @@ async function loadAuthorizationModel(configDir: string) {
   } else if (existsSync(path.join(configDir, '/authorization-model.yml'))) {
     fileExtension = SupportedFileExtension.Yml;
     syntaxFormat = SyntaxFormat.Friendly1;
+  } else if (existsSync(path.join(configDir, '/authorization-model.dsl'))) {
+    fileExtension = SupportedFileExtension.Dsl;
+    syntaxFormat = SyntaxFormat.Friendly2;
   } else if (existsSync(path.join(configDir, '/authorization-model.scl'))) {
     fileExtension = SupportedFileExtension.Scl;
     syntaxFormat = SyntaxFormat.Friendly2;
-  } else if (existsSync(path.join(configDir, '/authorization-model.openfga'))) {
-    fileExtension = SupportedFileExtension.OpenFga;
+  } else if (existsSync(path.join(configDir, '/authorization-model.fga'))) {
+    fileExtension = SupportedFileExtension.Fga;
     syntaxFormat = SyntaxFormat.Friendly2;
   } else if (existsSync(path.join(configDir, '/authorization-model.ofga'))) {
     fileExtension = SupportedFileExtension.Ofga;
+    syntaxFormat = SyntaxFormat.Friendly2;
+  } else if (existsSync(path.join(configDir, '/authorization-model.openfga'))) {
+    fileExtension = SupportedFileExtension.OpenFga;
     syntaxFormat = SyntaxFormat.Friendly2;
   } else {
     throw new Error('authorization_model_file_not_found');

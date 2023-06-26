@@ -29,6 +29,7 @@ function transform(fileContents: string, fileExtension: SupportedFileExtension):
     case SupportedFileExtension.Scl:
     case SupportedFileExtension.Dsl:
     case SupportedFileExtension.Ofga:
+    case SupportedFileExtension.Fga:
     case SupportedFileExtension.OpenFga:
       return JSON.stringify(transformToApiSyntax(fileContents, SyntaxFormat.Friendly2), null, '  ');
     default:
